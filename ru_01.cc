@@ -8,6 +8,7 @@
 #include<type_traits>
 using namespace std;
 
+
 bool read_int(int& val,FILE*& fp)
 {
 	if(fp == nullptr)
@@ -91,7 +92,7 @@ struct SANClickboxQuestionId
 	{
 		return id == other.id;
 	}
-	bool operator < (const SANClickboxQuestionId& other)
+	bool operator < (const SANClickboxQuestionId& other)const
 	{
 		return id < other.id;
 	}
@@ -183,7 +184,9 @@ public:
 		bool result = write_int(m_data.size(),fp);
 		if(result == false)
 			return false;
-		fwrite(&(m_data[0]),sizeof(source_type),m_data.size(),fp);
+		printf("%d_\r\n",m_data.size());
+		if(m_data.size() > 0)
+			fwrite(&(m_data[0]),sizeof(source_type),m_data.size(),fp);
 		return true;
 	}
 
@@ -192,9 +195,11 @@ public:
 		if(fp == nullptr)
 			return false;
 		int data_size;
+		Clear();
 		bool result = read_int(data_size,fp);
 		if(result == false)
 			return false;
+		printf("frameQueue[%d]\r\n",data_size);
 		if(data_size > 0)
 		{
 			m_data.resize(data_size);
@@ -310,12 +315,14 @@ public:
 		Clear();
 		int data_size;
 		read_int(data_size,fp);
+		printf("Resource number : %d  ",data_size);
 		if(data_size > 0)
 		{
 			m_data.resize(data_size);
 			fread(&(m_data[0]),sizeof(source_type),data_size,fp);
 		}
 		read_int(data_size,fp);
+		printf("indices : %d  \r\n",data_size);
 		if(data_size > 0)
 		{
 			m_result.resize(data_size);
@@ -340,7 +347,7 @@ struct filestructure
 	typedef struct tagTurnLight{int m_index; int m_lightState;/*-1 for left,0 for nothing,1 for right*/} tagTurnLight;			//转向灯
 	typedef struct tagWiper{int m_index; int m_wiperState; /*1 for on,0 for off*/} tagWiper;		//雨刷器
 	typedef struct tagAutoPicture{int m_index;int m_picIndex; int m_posx,m_posy,m_lenx,m_leny,m_startFrame,m_endFrame;} tagAutoPicture;	// 自动弹出图片
-	typedef struct tagAutoQuestion{int m_index; int m_quesIndex; int m_frameIndex,m_questionId;} tagAutoQuestion;	//自动弹出问题
+	typedef struct tagAutoQuestion{int m_index; int m_quesIndex;} tagAutoQuestion;	//自动弹出问题
 	typedef struct tagAudio{int m_index; int m_audioIndex; int m_startFrame;} tagAudio;					//声音
 	typedef struct tagFog{int m_index; float m_fogColor[4]; float m_startDistance;float m_endDistance;} tagFog;						//雾气
 	typedef struct tagCamera{int m_index;float m_position[3]; float m_rotation[3];} tagCamera;				//摄像机
@@ -348,6 +355,117 @@ struct filestructure
 	typedef struct tagClickBox{int m_index; float m_position[3]; float m_rotation[3]; float m_scaling[3];} tagClickBox;			//点击盒
 
 public:
+	tagFrontLight make_front_light_object(int frameIndex,int lightOffOn)
+	{
+		tagFrontLight output = {};
+		output.m_index = frameIndex;
+		output.m_lightState = lightOffOn;
+		return output;
+	}
+
+	tagTurnLight make_turn_light_object(int frameIndex,int lightState)
+	{
+		tagTurnLight output = {};
+		output.m_index = frameIndex;
+		output.m_lightState = lightState;
+		return output;
+	}
+
+	tagWiper make_wiper_object(int frameIndex,int wiperState)
+	{
+		tagWiper output = {};
+		output.m_index = frameIndex;
+		output.m_wiperState = wiperState;
+		return output;
+	}
+	tagAutoPicture make_auto_picture_object(int frameIndex,int picIndex,int posx,int posy,int lenx,int leny,int stframe,int edframe)
+	{
+		tagAutoPicture output = {};
+		output.m_index = frameIndex;
+		output.m_picIndex = picIndex;
+		output.m_lenx = lenx;
+		output.m_leny = leny;
+		output.m_posx = posx;
+		output.m_posy = posy;
+		output.m_lenx = lenx;
+		output.m_startFrame = stframe;
+		output.m_endFrame = edframe;
+		return output;
+	}
+
+	tagAutoQuestion make_auto_question_object(int frameIndex,int quesIndex)
+	{
+		tagAutoQuestion output = {};
+		output.m_index = frameIndex;
+		output.m_quesIndex = quesIndex;	//具体问题为从资源站
+		return output;
+	}
+
+	tagAudio make_audio_object(int frameIndex,int audioIndex,int stframe)
+	{
+		tagAudio output = {};
+		output.m_index = frameIndex;
+		output.m_startFrame = stframe;
+		output.m_audioIndex = audioIndex;
+		return output;
+	}
+
+	tagFog make_fog_object(int frameIndex,float r,float g,float b,float stdist,float eddist)
+	{
+		tagFog output = {};
+		output.m_index = frameIndex;
+		output.m_fogColor[0] = r;
+		output.m_fogColor[1] = g;
+		output.m_fogColor[2] = b;
+		output.m_fogColor[3] = 1.0f;
+		output.m_startDistance = stdist;
+		output.m_endDistance = eddist;
+		return output;
+	}
+	tagCamera make_camera_object(int frameIndex,float x,float y,float z,float rx,float ry,float rz)
+	{
+		tagCamera output = {};
+		output.m_index = frameIndex;
+		output.m_position[0] = x;
+		output.m_position[1] = y;
+		output.m_position[2] = z;
+		output.m_rotation[0] = rx;
+		output.m_rotation[1] = ry;
+		output.m_rotation[2] = rz;
+		return output;
+	}
+
+	tagModel make_model_object(int frameIndex,float x,float y,float z,float rx,float ry,float rz,float sx,float sy,float sz)
+	{
+		tagModel output = {};
+		output.m_index = frameIndex;
+		output.m_position[0] = x;
+		output.m_position[1] = y;
+		output.m_position[2] = z;
+		output.m_rotation[0] = rx;
+		output.m_rotation[1] = ry;
+		output.m_rotation[2] = rz;
+		output.m_scaling[0] = sx;
+		output.m_scaling[1] = sy;
+		output.m_scaling[2] = sz;
+		return output;
+	}
+
+	tagClickBox make_click_box_object(int frameIndex,float x,float y,float z,float rx,float ry,float rz,float sx,float sy,float sz)
+	{
+		tagClickBox output = {};
+		output.m_index = frameIndex;
+		output.m_position[0] = x;
+		output.m_position[1] = y;
+		output.m_position[2] = z;
+		output.m_rotation[0] = rx;
+		output.m_rotation[1] = ry;
+		output.m_rotation[2] = rz;
+		output.m_scaling[0] = sx;
+		output.m_scaling[1] = sy;
+		output.m_scaling[2] = sz;
+		return output;
+	}
 	filestructure(){}
 	~filestructure(){}
 
@@ -362,7 +480,8 @@ public:
 
 	bool AddPickbox(int question_id)
 	{
-		SANClickboxQuestionId;
+		//@Unfinished
+		;
 		return true;
 	}
 
@@ -370,7 +489,7 @@ public:
 	{
 		if(layerIndex != 0)
 			return false;
-		m_frontLightDisplay.AddFrame(other);
+		m_frontLight.AddFrame(other);
 		return true;
 	}
 	bool AddFrame(int layerIndex,const tagTurnLight& other)
@@ -466,7 +585,6 @@ public:
 
 	bool WriteFile(const char* filename)
 	{
-//@Unfinished
 		FILE* fp = nullptr;
 		fp = fopen(filename,"wb");
 		if(fp == nullptr)
@@ -476,6 +594,7 @@ public:
 		m_clickBoxQuestionId_source.WriteFile(fp);
 		m_audio_source.WriteFile(fp);
 
+		m_frontLight.WriteFile(fp);
 		m_turnLight.WriteFile(fp);
 		m_wiper.WriteFile(fp);
 		m_autoPicture.WriteFile(fp);
@@ -500,7 +619,6 @@ public:
 
 	bool ReadFile(const char* filename)
 	{
-//@Unfinished
 		int modelNumber;
 		int clickNumber;
 		FILE* fp = nullptr;
@@ -513,7 +631,8 @@ public:
 		m_clickBoxQuestionId_source.ReadFile(fp);
 		m_audio_source.ReadFile(fp);
 
-		m_frontLightDisplay.ReadFile(fp);
+	printf("Resouce Ok\r\n");
+		m_frontLight.ReadFile(fp);
 		m_turnLight.ReadFile(fp);
 		m_wiper.ReadFile(fp);
 		m_autoPicture.ReadFile(fp);
@@ -524,21 +643,38 @@ public:
 		read_int(modelNumber,fp);
 		m_models.resize(modelNumber);
 		for(int i=0;i<modelNumber;i++)
-			m_models.ReadFile(fp);
+			m_models[i].ReadFile(fp);
 		read_int(clickNumber,fp);
 		m_click.resize(clickNumber);
-		for(int i=0;i<m_clickNumber;i++)
-			m_click.ReadFile(fp);
+		for(int i=0;i<clickNumber;i++)
+			m_click[i].ReadFile(fp);
 		fclose(fp);
 		return true;
 	}
 
 	bool Render()
 	{
-		printf("%d\r\n");
 		return true;
 	}
-private:
+
+	bool Clear()
+	{
+		m_obj_source.Clear();
+		m_autoPicture_source.Clear();
+		m_clickBoxQuestionId_source.Clear();
+		m_frontLight.Clear();
+		m_turnLight.Clear();
+		m_wiper.Clear();
+		m_autoPicture.Clear();
+		m_autoQuestion.Clear();
+		m_audio.Clear();
+		m_fog.Clear();
+		m_camera.Clear();
+		m_models.clear();
+		m_click.clear();
+		return true;
+	}
+//private:
 // the resouce heap
 	UniqueSource<SANOBJ> m_obj_source;
 	UniqueSource<SANAutoPicture> m_autoPicture_source;
@@ -546,7 +682,19 @@ private:
 	UniqueSource<SANAudio> m_audio_source;
 
 // the display heap
-	FrameQueue<tagFrontLight> m_frontLightDisplay;
+//all the layers
+
+#define CAR_FRONT_LIGHT 0
+#define CAR_TURN_LIGHT  1
+#define CAR_WIPER		2
+#define AUTO_PICTURE	3
+#define AUTO_QUESTION	4
+#define RENDER_AUDIO	5
+#define RENDER_FOG		6
+#define RENDER_CAMERA	7
+#define RENDER_MODEL	8
+#define RENDER_CLICK	(RENDER_MODEL + m_models.size())
+	FrameQueue<tagFrontLight> m_frontLight;
 	FrameQueue<tagTurnLight> m_turnLight;
 	FrameQueue<tagWiper> m_wiper;
 	FrameQueue<tagAutoPicture> m_autoPicture;
@@ -558,21 +706,31 @@ private:
 	std::vector<FrameQueue<tagClickBox> >m_click;
 };
 
+struct S{int m_index;};
 int main()
 {
-	SANClickboxQuestionId a = {12},b = {13};
-	printf("%d\r\n",a<b);
-
 	filestructure f;
+	filestructure f2;
 	f.AddModel("x1","data/model/xyz.obj");
 	f.AddModel("x2","data/model/xyz1.obj");
 	f.AddModel("x3","data/model/xyz2.obj");
 	f.AddModel("x4","data/model/xyz3.obj");
-
+//
+//	f.AddFrame(RENDER_MODEL + 0,f.make_model_object(10,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,1.0f,1.0f,1.0f));
+//	f.AddFrame(RENDER_MODEL + 0,f.make_model_object(20,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,1.0f,1.0f,1.0f));
+//	f.AddFrame(RENDER_MODEL + 0,f.make_model_object(15,0.0f,10.0f,0.0f,0.0f,0.0f,0.0f,1.0f,1.0f,1.0f));
+//	f.AddFrame(RENDER_MODEL + 1,f.make_model_object(10,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,1.0f,1.0f,1.0f));
+//	f.AddFrame(RENDER_MODEL + 1,f.make_model_object(30,0.0f,0.0f,0.0f,0.0f,0.0f,0.0f,1.0f,1.0f,10.0f));
 
 	f.WriteFile("test.wujiecao");
 	f.ReadFile("test.wujiecao");
-//	;
+//	f2.ReadFile("test.wujiecao");
+
+	for(int i=0;i<f2.m_obj_source.m_data.size();i++)
+	{
+		printf("%s \r %s\r\n",f2.m_obj_source.m_data[i].nickname,f2.m_obj_source.m_data[i].path);
+	}
+
 //	UniqueSource<SANOBJ> m;
 //	SANOBJ t = {"123","456"};
 //	SANOBJ t2 = {"1233","456"};
